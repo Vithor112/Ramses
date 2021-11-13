@@ -1,0 +1,100 @@
+; Direções 
+; Bit 0  -  Direita
+; Bit 1  -  Esquerda
+; Bit 2  -  Baixo
+; Bit 3  -  Cima 
+
+
+org 253 ; Coordenada de entrada da esfera
+Xposicao: db ; Coordenada X da entrada da esfera
+Yposicao: db ; Coordenada Y da entrada da esfera 
+Direcao:  db ; Direção da esfera
+
+
+org 217 ; Matriz que representa a caixa
+Dab [36] ; Vetor da Matriz
+
+;---------------------------------------
+; Programa
+;---------------------------------------
+
+org 0 
+infinito:Jsr Atualizadir        ; Sub-rotina que atualiza a direção da bola, é executada primeiro para verificar se há algum 
+Jsr Movimenta                   ; Sub-rotina que atualiza a coordenada da bola, ou seja realiza o movimento
+jmp infinito                    ; Produz um loop infinito, pois as sub-rotinas o encerram, considerando que nao aja um ciclo de repetições ).
+
+
+;; Sub-rotina Atualiza-direção
+Atualizadir: nop
+ldr X, #0
+ldr B, Yposicao                 ; Carrega a posição Y no B
+loop_multi: Jz encerra_multi    ; E então usando o B como contador soma 6 repetidamente em X, até B == 0;
+Add X, #6                    
+Sub B, #1
+jmp loop_multi
+encerra_multi: Add X, Xposicao  ; Adiciona a coordenada X no registrador X
+Ldr B, hD9, x                   ; Usando acesso indexado, acessa a posição que a bola está
+And B, #h0F                     ; Usa-se uma mask para descartar os 4 Msb
+Jz Atualizadir,i                ; Caso os 4 Lsb estejam desligados encerra a sub-rotina
+Str B, direcao                  ; Se não muda a direção da bola e encerra a sub-rotina
+Jmp Atualizadir, i 
+
+
+
+
+ 
+
+;; Sub-rotina da movimentação
+Movimenta: Nop
+Ldr A, Direcao                  ; Carrega a direção no Registrador A
+and A, #H0F                     ; Usa-se uma mask para descartar os 4 Msb
+Ldr B, Xposicao                 ; Carrega a posição B no registrador X para caso seja um movimento para esquerda ou direita
+sub A, #H01                     ; Aqui se subtrai por 1,2,4 e 8 respectivamente, sempre verificando se o número de tornou negativo ( ou zero no caso do 1 )
+Jz Direita                      ; E então indo para a parte do código que realiza o respectivo movimento
+sub A, #H02
+Jn Esquerda
+Ldr B, Yposicao
+sub A, #04
+Jn Baixo
+sub A, #08
+Jn Cima 
+
+Direita: Add B, #1              ; Adiciona 1 A B (posição X) e verifica se a posição é igual a 6, se é diminui 1, armazena e encerra o programa.
+Str B, Xposicao
+sub B, #6
+Jn pula_direita
+Add B, #5
+Str B, Xposicao
+Hlt
+pula_direita: jmp Movimenta,i   ; Se não armazena a posição e continua o programa
+
+Esquerda: Sub B, #1             ; Subtrai um de B (posição X) e verifica se a posição é negative, se sim soma 1, armazena e encerra o programa
+str B, Xposicao
+Jn encerra_esquerda
+jmp Movimenta,i                 ; Se não armazena e continua o programa 
+encerra_esquerda: Add B, #1     
+Str B, Xposicao
+Hlt
+
+Baixo: Add B, #1                ; Soma 1 ao registrador B (posição y) e verifica se é igual a 6, se for subtrai um, armazena e encerra o programa
+str B, Yposicao
+Sub B, #6
+Jn pula_baixo
+Add B, #5
+Str B, Yposicao
+Hlt
+pula_baixo: jmp movimenta,i     ; Se não armazena e continua o programa 
+
+
+Cima: Sub B, #1                 ; Subtrai um de B (posição Y) e verifica se a posição é negative, se sim soma 1, armazena e encerra o programa
+str B, Yposicao              
+jn encerra_cima
+jmp Movimenta,i                 ; Se não armazena e continua o programa 
+encerra_cima: Add B,#1
+str B, Yposicao
+Hlt
+
+  
+
+
+
